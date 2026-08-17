@@ -17,6 +17,7 @@ import {
   BadgeCheck,
   Sparkles,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Footer() {
   const pathname = usePathname();
