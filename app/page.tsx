@@ -37,6 +37,7 @@ const stats = [
   { label: "Expert Mentors", value: 80, suffix: "+", icon: Users },
   { label: "Success Rate", value: 94, suffix: "%", icon: Star },
   { label: "Hours of Content", value: 5, suffix: "k+", icon: Clock },
+
 ];
 
 // ================= COURSE CARD =================
@@ -87,9 +88,7 @@ const CourseCard = ({ item }: any) => {
           {/* Location ki jagah humne BookOpen (Lectures) ya Star (Rating) laga diya hai */}
           <span className="flex items-center gap-1 bg-purple-50 px-2 py-1 rounded-lg">
             <BookOpen size={14} className="text-purple-600" />
-            {item.lessons
-              ? `${item.lessons} Lessons`
-              : `${item.rating || "4.8"} ★`}
+            {item.lessons ? `${item.lessons} Lessons` : `${item.rating || "4.8"} ★`}
           </span>
         </div>
 
@@ -242,12 +241,12 @@ export default function Home() {
         const [iRes, mRes, cRes] = await Promise.all([
           fetch(`${API}/upload/internships/list/`),
           fetch(`${API}/api/mentors/list/`),
-          fetch(`${API}/api/courses/list/`),
+          fetch(`${API}/api/courses/list/`)
         ]);
         const internshipsData = await iRes.json();
         const mentorsData = await mRes.json();
         const coursesData = await cRes.json();
-
+        
         setInternships(internshipsData.slice(0, 4));
         setMentors(mentorsData.slice(0, 4));
         setCourses(coursesData.slice(0, 4));
@@ -391,11 +390,11 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {loadings
             ? [1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="w-full h-72 sm:h-80 md:h-84 bg-gray-100 animate-pulse rounded-3xl"
-                />
-              ))
+              <div
+                key={i}
+                className="w-full h-72 sm:h-80 md:h-84 bg-gray-100 animate-pulse rounded-3xl"
+              />
+            ))
             : internships.map((i) => <InternshipCard key={i._id} item={i} />)}
         </div>
       </section>
@@ -408,8 +407,7 @@ export default function Home() {
               Popular Courses
             </h2>
             <p className="text-gray-500">
-              Upgrade your skills with industry-recognized certification
-              courses.
+              Upgrade your skills with industry-recognized certification courses.
             </p>
           </div>
           <Link
@@ -424,11 +422,11 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {loadings
             ? [1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="w-full h-72 sm:h-80 md:h-84 bg-gray-100 animate-pulse rounded-3xl"
-                />
-              ))
+              <div
+                key={i}
+                className="w-full h-72 sm:h-80 md:h-84 bg-gray-100 animate-pulse rounded-3xl"
+              />
+            ))
             : courses.map((c) => <CourseCard key={c._id} item={c} />)}
         </div>
       </section>
@@ -730,12 +728,12 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {loadings
             ? [1, 2, 3, 4].map((i) => (
-                // ✅ FIXED SKELETON
-                <div
-                  key={i}
-                  className="w-full aspect-[4/5] bg-gray-100 animate-pulse rounded-2xl"
-                />
-              ))
+              // ✅ FIXED SKELETON
+              <div
+                key={i}
+                className="w-full aspect-[4/5] bg-gray-100 animate-pulse rounded-2xl"
+              />
+            ))
             : mentors.map((m) => <MentorCard key={m._id} mentor={m} />)}
         </div>
       </section>
