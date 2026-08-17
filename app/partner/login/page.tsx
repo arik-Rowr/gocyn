@@ -117,7 +117,7 @@ const languageOptions = [
   "Marathi",
   "Kannada",
   "Malayalam",
-  "Other"
+  "Other",
 ];
 
 const defaultSignupData: MentorSignupData = {
@@ -436,7 +436,7 @@ export default function MentorAuthPage() {
 
   const renderStep0 = () => (
     <div className="space-y-5">
-      <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+      <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 flex-col sm:flex-row">
         <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-blue-200">
           {signupData.profilePhoto ? (
             <img
@@ -460,10 +460,10 @@ export default function MentorAuthPage() {
             </svg>
           )}
         </div>
-        <div>
+        <div className="flex-1 w-full sm:w-auto">
           <p className="text-sm font-semibold text-gray-800">Profile Photo</p>
           <p className="text-xs text-gray-500 mb-2">JPG or PNG, max 2MB</p>
-          <label className="cursor-pointer text-xs font-semibold text-blue-600 hover:text-blue-700 border border-blue-300 rounded-lg px-3 py-1.5 hover:bg-blue-50 transition-all bg-white">
+          <label className="cursor-pointer text-xs font-semibold text-blue-600 hover:text-blue-700 border border-blue-300 rounded-lg px-3 py-1.5 hover:bg-blue-50 transition-all bg-white inline-block">
             Choose Photo
             <input
               type="file"
@@ -493,7 +493,7 @@ export default function MentorAuthPage() {
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Email" required fieldKey="email">
           <input
             type="email"
@@ -516,7 +516,7 @@ export default function MentorAuthPage() {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Password" required fieldKey="password">
           <div className="relative">
             <input
@@ -552,7 +552,7 @@ export default function MentorAuthPage() {
 
   const renderStep1 = () => (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Current Role / Title" required fieldKey="currentRole">
           <input
             type="text"
@@ -575,7 +575,7 @@ export default function MentorAuthPage() {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field
           label="Years of Experience"
           required
@@ -722,7 +722,7 @@ export default function MentorAuthPage() {
         required
         fieldKey="offeringType"
       >
-        <div className="grid grid-cols-2 gap-3 mt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
           {offeringOptions.map((opt) => (
             <button
               key={opt.id}
@@ -753,7 +753,7 @@ export default function MentorAuthPage() {
         )}
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Target Audience" required fieldKey="targetAudience">
           <select
             value={signupData.targetAudience}
@@ -875,7 +875,7 @@ export default function MentorAuthPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Aadhaar Number" fieldKey="aadhaarNumber">
           <input
             type="text"
@@ -939,7 +939,7 @@ export default function MentorAuthPage() {
               />
             </svg>
             <span
-              className={`text-sm ${file ? "text-green-700 font-medium" : "text-gray-400"}`}
+              className={`text-sm truncate ${file ? "text-green-700 font-medium" : "text-gray-400"}`}
             >
               {file ? file.name : "Click to upload — JPG, PNG, PDF up to 5MB"}
             </span>
@@ -1106,7 +1106,7 @@ export default function MentorAuthPage() {
             className="flex flex-col items-center gap-2 z-10 relative"
           >
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center border-2 text-sm font-bold transition-all duration-300 ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 text-xs sm:text-sm font-bold transition-all duration-300 ${
                 done
                   ? "bg-blue-600 border-blue-600 text-white"
                   : active
@@ -1150,20 +1150,20 @@ export default function MentorAuthPage() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         * { font-family: 'Plus Jakarta Sans', sans-serif; }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-track { background: #1588fa; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         option { background: white; color: #111827; }
         select { color: #374151; }
       `}</style>
 
       {/* ── Left Panel ── */}
-      <div className="hidden lg:flex w-[820px] flex-shrink-0 flex-col relative overflow-hidden bg-gradient-to-br from-blue-200 via-blue-400 to-blue-800">
+      <div className="hidden lg:flex w-[620px] flex-shrink-0 flex-col relative overflow-hidden bg-gradient-to-br from-blue-400 via-blue-600 to-blue-700">
         {/* Subtle dot grid */}
         <div
           className="absolute inset-0"
           style={{
             backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)",
+              "radial-gradient(circle, rgba(211, 16, 16, 0.1) 1px, transparent 1px)",
             backgroundSize: "28px 28px",
           }}
         />
@@ -1181,7 +1181,7 @@ export default function MentorAuthPage() {
             {mode === "signin" ? (
               <>
                 <div className="inline-block mb-4 px-3 py-1 rounded-full bg-white/100 border border-white/20 text-xs text-blue-900 font-semibold tracking-wider uppercase">
-                  Partner Portal
+                  Mentor Portal
                 </div>
                 <div className="flex items-center gap-3 mb-4">
                   <Image
@@ -1199,7 +1199,7 @@ export default function MentorAuthPage() {
                   <br />
                   you back.
                 </h1>
-                <p className="mt-4 text-blue-200 text-base leading-relaxed">
+                <p className="mt-4 text-blue-20 text-base leading-relaxed">
                   Your students are waiting. Continue shaping careers through
                   your expertise.
                 </p>
@@ -1211,10 +1211,10 @@ export default function MentorAuthPage() {
                   ].map((item) => (
                     <div
                       key={item}
-                      className="flex items-center gap-2.5 text-sm text-blue-100"
+                      className="flex items-center gap-2.5 text-sm text-blue-10"
                     >
                       <svg
-                        className="w-4 h-4 text-blue-300 flex-shrink-0"
+                        className="w-4 h-4 text-blue-30 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -1234,7 +1234,7 @@ export default function MentorAuthPage() {
             ) : (
               <>
                 <div className="inline-block mb-4 px-3 py-1 rounded-full bg-white/100 border border-white/20 text-xs text-black-100 font-semibold tracking-wider uppercase">
-                  Become a Partner
+                  Become a Mentor
                 </div>
                 <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight">
                   Share your
@@ -1279,13 +1279,13 @@ export default function MentorAuthPage() {
 
       {/* ── Right Panel ── */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
-        <div className="flex-1 flex items-start justify-center p-6 lg:p-12 pt-10">
+        <div className="flex-1 flex items-start justify-center p-4 sm:p-6 lg:p-12 pt-10">
           <div className="w-full max-w-2xl">
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
                 {mode === "signin"
                   ? "Sign in to your dashboard"
-                  : "Create partner profile"}
+                  : "Create profile"}
               </h2>
               <p className="mt-2 text-gray-500 text-sm">
                 {mode === "signin"
@@ -1306,7 +1306,24 @@ export default function MentorAuthPage() {
 
             {/* SIGNIN */}
             {mode === "signin" && (
-              <div className="bg-white   p-28 ">
+              <div className="bg-white p-4 sm:p-8 lg:p-28">
+                <div className="lg:hidden flex items-center justify-center px-4 py-2 gap-3 ">
+                  <Image
+                    src="/logo.png"
+                    alt="Gocyn logo"
+                    width={90}
+                    height={90}
+                    className="rounded-lg"
+                  />
+                  <span className="text-4xl font-bold tracking-tighter text-gray-900">
+                    Go<span className="text-blue-600">cyn</span>
+                  </span>
+                 
+                </div>
+                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight py-6 mb-8">
+                    {" "}
+                    Welcome Back !
+                  </h2>
                 <form onSubmit={handleSignin} className="space-y-5">
                   <Field label="Email Address" fieldKey="signinEmail">
                     <input
@@ -1315,7 +1332,7 @@ export default function MentorAuthPage() {
                       onChange={(e) => setSigninEmail(e.target.value)}
                       required
                       className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all"
-                      placeholder="you@company.com"
+                      placeholder="example@gmail.com"
                     />
                   </Field>
                   <Field label="Password" fieldKey="signinPassword">
@@ -1402,7 +1419,7 @@ export default function MentorAuthPage() {
             {/* SIGNUP STEPPER */}
             {mode === "signup" && (
               <form onSubmit={handleRegistration}>
-                <div className="bg-white  p-8">
+                <div className="bg-white p-4 sm:p-6 lg:p-8">
                   {renderStepper()}
 
                   <div className="mb-5">

@@ -328,13 +328,19 @@ export default function Home() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Link
-                    href="/partner/login"
+                  <a
+                    
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.replace(
+                        "https://www.mentor.gocyn.com/partner/login",
+                      );
+                    }}
                     className="group inline-flex items-center gap-2 bg-white px-6 py-3 text-sm font-semibold text-black transition-all duration-300 hover:scale-105 hover:bg-zinc-200"
                   >
                     Become a Partner
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
+                  </a>
                 </motion.div>
               </div>
             </section>

@@ -13,11 +13,12 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  if (host.startsWith("mentor.")) {
-    // If already inside /admin, allow
+  if (host === "mentor.gocyn.com" || host === "www.mentor.gocyn.com") {
+    // Already on partner routes
     if (!url.pathname.startsWith("/partner")) {
-      url.pathname = "/partner/login"; // 👈 IMPORTANT
-      return NextResponse.rewrite(url);
+      url.pathname = "/partner/login";
+
+      return NextResponse.redirect(url);
     }
   }
 

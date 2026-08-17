@@ -452,8 +452,8 @@ export default function Navbar() {
                 className="flex items-center gap-3 px-4 py-3.5 text-gray-700 hover:bg-gray-200 hover:scale-[1.02] font-medium transition-all duration-200"
                 onClick={closeMenu}
               >
-                <FiBriefcase size={20} className="text-gray-500" />
-                Internship
+                <FiBook size={20} className="text-gray-500" />
+                Courses
               </Link>
 
               <Link

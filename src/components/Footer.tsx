@@ -20,6 +20,14 @@ import {
 
 export default function Footer() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render footer during initial hydration
+  if (!mounted) return null;
 
   const hideRoutes = [
     "/admin",
@@ -94,7 +102,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Navigation Links */}
           <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-10">
 
             {/* Platform */}
@@ -107,7 +114,6 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Company */}
             <div>
               <h4 className="font-semibold text-gray-900 mb-5 text-sm tracking-widest uppercase flex items-center gap-2"> Company</h4>
               <ul className="space-y-3 text-[15px] text-gray-600">
