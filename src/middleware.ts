@@ -5,19 +5,18 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const url = request.nextUrl.clone();
 
-  if (host.startsWith("main.")) {
-    // If already inside /admin, allow
+  // Main admin subdomain
+  if (host === "main.gocyn.com" || host === "www.main.gocyn.com") {
     if (!url.pathname.startsWith("/admin")) {
-      url.pathname = "/admin/login"; // 👈 IMPORTANT
+      url.pathname = "/admin/login";
       return NextResponse.rewrite(url);
     }
   }
 
+  // Mentor subdomain
   if (host === "mentor.gocyn.com" || host === "www.mentor.gocyn.com") {
-    // Already on partner routes
     if (!url.pathname.startsWith("/partner")) {
       url.pathname = "/partner/login";
-
       return NextResponse.redirect(url);
     }
   }
@@ -26,5 +25,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|api|.*\\..*).*)",
+  ],
 };
