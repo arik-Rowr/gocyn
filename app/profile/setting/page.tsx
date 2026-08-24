@@ -5,19 +5,34 @@ import Link from "next/link";
 import {
   Bell,
   Shield,
-  X,
+  LogOut,
+  Mail,
+  Smartphone,
   AlertTriangle,
   Trash2,
-  Mail,
+  ChevronRight,
+  Check,
+  X,
   FileText,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext"; // adjust path if needed
 
 const API = process.env.NEXT_PUBLIC_APP_URL;
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState<"notifications" | "account">(
+    "notifications"
+  );
 
+  // Notification preferences
+  const [emailNotifs, setEmailNotifs] = useState(true);
+  const [pushNotifs, setPushNotifs] = useState(true);
+  const [internshipAlerts, setInternshipAlerts] = useState(true);
+  const [courseUpdates, setCourseUpdates] = useState(true);
+  const [marketingEmails, setMarketingEmails] = useState(false);
+
+  // Delete account states
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [confirmChecked, setConfirmChecked] = useState(false);
@@ -27,6 +42,12 @@ export default function SettingsPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const router = useRouter();
+  const { logout } = useAuth(); // use your auth context
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   const resetDelete = () => {
     try {
@@ -43,15 +64,6 @@ export default function SettingsPage() {
     setErrorMsg("");
     router.replace("/login");
   };
-
-  const tabs = [
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: <Bell className="w-5 h-5" />,
-    },
-    { id: "account", label: "Account", icon: <Shield className="w-5 h-5" /> },
-  ];
 
   const handleDeleteAccount = async () => {
     if (!confirmChecked) return;
@@ -70,10 +82,7 @@ export default function SettingsPage() {
       setDeleteStatus("verifying");
 
       const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("Session expired. Please login again.");
-      }
+      if (!token) throw new Error("Session expired. Please login again.");
 
       const res = await fetch(`${API}/api/users/profile/delete/`, {
         method: "DELETE",
@@ -85,15 +94,10 @@ export default function SettingsPage() {
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete account");
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to delete account");
-      }
-
-      // Clear all auth data after successful deletion
       localStorage.clear();
       sessionStorage.clear();
-
       setDeleteStatus("success");
     } catch (err: any) {
       setDeleteStatus("error");
@@ -101,234 +105,401 @@ export default function SettingsPage() {
     }
   };
 
+  const tabs = [
+    {
+      id: "notifications" as const,
+      label: "Notifications",
+      icon: Bell,
+      description: "Email & push preferences",
+    },
+    {
+      id: "account" as const,
+      label: "Account",
+      icon: Shield,
+      description: "Security & deletion",
+    },
+  ];
+
   return (
-    <>
-      <div className="pt-14 min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-            {/* Sidebar – horizontal scroll on mobile */}
-            <div className="w-full lg:w-64 bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 p-3 h-fit lg:sticky top-20">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 px-3 sm:px-4 py-2 sm:py-3">
-                Settings
-              </h1>
-              <div className="mt-2 flex lg:flex-col gap-2 overflow-x-auto">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl text-left transition-all text-sm sm:text-base ${
-                      activeTab === tab.id
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "hover:bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {tab.icon}
-                    <span className="font-medium whitespace-nowrap">
-                      {tab.label}
-                    </span>
-                  </button>
-                ))}
+    <div className="min-h-screen bg-gray-50 pt-1">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Page Header */}
+        <div className="mb-8 sm:mb-10">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+            Settings
+          </h1>
+          <p className="mt-2 text-gray-500 text-base sm:text-lg">
+            Manage your notifications and account preferences
+          </p>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+          {/* ─── Sidebar ─── */}
+          <aside className="w-full lg:w-72 shrink-0">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <nav className="p-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div
+                        className={`p-2 rounded-lg ${
+                          isActive ? "bg-blue-100" : "bg-gray-100"
+                        }`}
+                      >
+                        <Icon
+                          className={`w-5 h-5 ${
+                            isActive ? "text-blue-600" : "text-gray-500"
+                          }`}
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{tab.label}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {tab.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Logout */}
+              <div className="border-t border-gray-100 p-2">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left text-red-600 hover:bg-red-50 transition-all"
+                >
+                  <div className="p-2 rounded-lg bg-red-50">
+                    <LogOut className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Log out</p>
+                    <p className="text-xs text-red-400 mt-0.5">
+                      Sign out of your account
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
+          </aside>
 
-            {/* Main Area */}
-            <div className="flex-1 w-full max-w-3xl mx-auto">
-              <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1">
-                Account Settings
-              </h2>
-              <p className="text-gray-500 text-sm sm:text-base mb-6 sm:mb-8">
-                Manage your notifications and account security
-              </p>
+          {/* ─── Main Content ─── */}
+          <main className="flex-1 min-w-0">
+            {/* ==================== NOTIFICATIONS TAB ==================== */}
+            {activeTab === "notifications" && (
+              <div className="space-y-6">
+                {/* Email Notifications */}
+                <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="px-6 py-5 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-lg">
+                        <Mail className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Email Notifications
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          Choose what we send to your inbox
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-              {activeTab === "notifications" && (
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm p-5 sm:p-8">
-                  <div className="flex items-center justify-center flex-col py-8 sm:py-12 text-center">
-                    <Bell className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600 mb-4" />
-                    <h3 className="text-xl sm:text-2xl font-semibold">
-                      Notification Preferences
+                  <div className="divide-y divide-gray-100">
+                    <ToggleRow
+                      title="Internship & Job Alerts"
+                      description="Get notified when new internships matching your profile are posted"
+                      checked={internshipAlerts}
+                      onChange={setInternshipAlerts}
+                    />
+                    <ToggleRow
+                      title="Course Updates"
+                      description="Updates about courses you’re enrolled in or following"
+                      checked={courseUpdates}
+                      onChange={setCourseUpdates}
+                    />
+                    <ToggleRow
+                      title="Marketing & Promotions"
+                      description="Occasional offers, tips and product news"
+                      checked={marketingEmails}
+                      onChange={setMarketingEmails}
+                    />
+                  </div>
+                </section>
+
+                {/* Push Notifications */}
+                <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="px-6 py-5 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-violet-50 rounded-lg">
+                        <Smartphone className="w-5 h-5 text-violet-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Push Notifications
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          Alerts on your device
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-gray-100">
+                    <ToggleRow
+                      title="Enable Push Notifications"
+                      description="Receive real-time alerts on this device"
+                      checked={pushNotifs}
+                      onChange={setPushNotifs}
+                    />
+                    <ToggleRow
+                      title="Email Digest"
+                      description="Weekly summary of activity and opportunities"
+                      checked={emailNotifs}
+                      onChange={setEmailNotifs}
+                    />
+                  </div>
+                </section>
+
+                <p className="text-sm text-gray-500 px-1">
+                  You will always receive important security and account-related
+                  emails.
+                </p>
+              </div>
+            )}
+
+            {/* ==================== ACCOUNT TAB ==================== */}
+            {activeTab === "account" && (
+              <div className="space-y-6">
+                {deleteStatus === "success" ? (
+                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 sm:p-16 text-center">
+                    <div className="mx-auto w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-6">
+                      <Check className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      Account Deleted
                     </h3>
-                    <p className="text-gray-500 mt-2 sm:mt-3 max-w-md text-sm sm:text-base">
-                      You will continue to receive important updates about
-                      internships and applications.
+                    <p className="text-gray-500 mt-3 max-w-md mx-auto">
+                      Your account has been permanently deleted. We’re sorry to
+                      see you go.
                     </p>
-                    <button className="mt-6 sm:mt-8 bg-blue-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-2xl sm:rounded-3xl text-sm sm:text-base font-medium">
-                      Manage Email &amp; Push Notifications
+                    <button
+                      onClick={resetDelete}
+                      className="mt-8 px-6 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition"
+                    >
+                      Go to Login
                     </button>
                   </div>
-                </div>
-              )}
-
-              {activeTab === "account" && (
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm p-5 sm:p-8">
-                  {deleteStatus === "success" ? (
-                    <div className="text-center py-10 sm:py-16">
-                      <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-green-100 text-green-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mb-4 sm:mb-6">
-                        <Trash2 className="w-8 h-8 sm:w-10 sm:h-10" />
-                      </div>
-                      <h3 className="text-2xl sm:text-3xl font-bold text-green-600">
-                        Account Deleted Successfully
-                      </h3>
-                      <p className="text-gray-600 mt-3 sm:mt-4 max-w-md mx-auto text-sm sm:text-base">
-                        Your Gocyn account has been permanently deleted.
-                        <br />
-                        Thank you for being part of our community.
-                      </p>
-                      <button
-                        onClick={resetDelete}
-                        className="mt-8 sm:mt-10 px-6 sm:px-8 py-2.5 sm:py-3 bg-gray-800 text-white rounded-2xl sm:rounded-3xl text-sm sm:text-base font-medium"
-                      >
-                        Back to Settings
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3 text-red-600 mb-4 sm:mb-6">
-                        <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7" />
-                        <h3 className="text-xl sm:text-2xl font-bold">
-                          Delete Account
-                        </h3>
+                ) : (
+                  <>
+                    {/* Danger Zone */}
+                    <section className="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden">
+                      <div className="px-6 py-5 border-b border-red-100 bg-red-50/50">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-red-100 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                          </div>
+                          <div>
+                            <h2 className="text-lg font-semibold text-red-700">
+                              Delete Account
+                            </h2>
+                            <p className="text-sm text-red-600/80">
+                              This action is permanent and cannot be undone
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
-                      <p className="text-gray-600 text-base sm:text-lg">
-                        This action is{" "}
-                        <span className="font-semibold text-red-600">
-                          permanent and cannot be undo
-                        </span>
-                        .
-                      </p>
-
-                      <div className="mt-6 sm:mt-10 space-y-6 sm:space-y-8">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Enter your password
-                          </label>
-                          <input
-                            type="password"
-                            placeholder="Your account password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl sm:rounded-2xl focus:border-red-500 outline-none text-base sm:text-lg"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Confirm password
-                          </label>
-                          <input
-                            type="password"
-                            placeholder="Re-enter your password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl sm:rounded-2xl focus:border-red-500 outline-none text-base sm:text-lg"
-                          />
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            id="confirm"
-                            checked={confirmChecked}
-                            onChange={(e) =>
-                              setConfirmChecked(e.target.checked)
-                            }
-                            className="mt-1 w-5 h-5 accent-red-600 shrink-0"
-                          />
-                          <label
-                            htmlFor="confirm"
-                            className="text-sm text-gray-700 leading-tight cursor-pointer"
-                          >
-                            I understand that deleting my account is permanent
-                            and I will lose all my data, internships,
-                            connections and profile on Gocyn.
-                          </label>
-                        </div>
-
-                        {errorMsg && (
-                          <p className="text-red-600 text-sm font-medium flex items-center gap-2 bg-red-50 p-3 rounded-xl sm:rounded-2xl">
-                            <X className="w-4 h-4 shrink-0" /> {errorMsg}
-                          </p>
-                        )}
-
-                        <button
-                          onClick={handleDeleteAccount}
-                          disabled={
-                            deleteStatus === "verifying" || !confirmChecked
-                          }
-                          className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-white font-semibold py-3 sm:py-4 rounded-2xl sm:rounded-3xl flex items-center justify-center gap-1 text-sm sm:text-base"
-                        >
-                          {deleteStatus === "verifying" ? (
-                            <>Verifying &amp; Deleting Account...</>
-                          ) : (
-                            <>
-                              <Trash2 className="w-4 h-4 sm:w-4 sm:h-" />
-                              Permanently Delete My Account
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Contact & Terms with React Icons */}
-                      <div className="mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-gray-200">
-                        <p className="text-gray-500 text-sm mb-4 sm:mb-6">
-                          Before deleting your account, you may want to:
+                      <div className="p-6 space-y-6">
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          Deleting your account will permanently remove all your
+                          data, applications, saved internships, and profile
+                          information from Gocyn.
                         </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                          {/* Contact Us */}
-                          <Link
-                            href="/contactus"
-                            className="group flex items-center justify-between bg-white border border-gray-200 hover:border-blue-500 rounded-2xl sm:rounded-3xl p-4 sm:p-6 transition-all"
-                          >
-                            <div className="flex items-center gap-3 sm:gap-4">
-                              <div className="w-10 h-10 bg-blue-100 rounded-xl sm:rounded-2xl flex items-center justify-center text-blue-600 shrink-0">
-                                <Mail className="w-5 h-5 sm:w-6 sm:h-6" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-base sm:text-lg text-gray-900">
-                                  Contact Us
-                                </p>
-                                <p className="text-xs sm:text-sm text-gray-500">
-                                  Talk to support before deleting
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-blue-600 group-hover:translate-x-1 transition-transform text-lg sm:text-xl">
-                              →
-                            </span>
-                          </Link>
 
-                          {/* Terms & Conditions */}
-                          <Link
-                            href="/auth/terms-and-conditions"
-                            className="group flex items-center justify-between bg-white border border-gray-200 hover:border-blue-500 rounded-2xl sm:rounded-3xl p-4 sm:p-6 transition-all"
-                          >
-                            <div className="flex items-center gap-3 sm:gap-4">
-                              <div className="w-10 h-10 bg-amber-100 rounded-xl sm:rounded-2xl flex items-center justify-center text-amber-600 shrink-0">
-                                <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-base sm:text-lg text-gray-900">
-                                  Terms &amp; Conditions
-                                </p>
-                                <p className="text-xs sm:text-sm text-gray-500">
-                                  Read full terms before deleting
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-blue-600 group-hover:translate-x-1 transition-transform text-lg sm:text-xl">
-                              →
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                              Password
+                            </label>
+                            <input
+                              type="password"
+                              placeholder="Enter your password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                              Confirm Password
+                            </label>
+                            <input
+                              type="password"
+                              placeholder="Re-enter your password"
+                              value={confirmPassword}
+                              onChange={(e) =>
+                                setConfirmPassword(e.target.value)
+                              }
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition text-sm"
+                            />
+                          </div>
+
+                          <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={confirmChecked}
+                              onChange={(e) =>
+                                setConfirmChecked(e.target.checked)
+                              }
+                              className="mt-1 w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            />
+                            <span className="text-sm text-gray-600 leading-relaxed">
+                              I understand that deleting my account is permanent
+                              and I will lose all my data, applications, and
+                              connections on Gocyn.
                             </span>
-                          </Link>
+                          </label>
+
+                          {errorMsg && (
+                            <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-4 py-3 rounded-xl">
+                              <X className="w-4 h-4 shrink-0" />
+                              {errorMsg}
+                            </div>
+                          )}
+
+                          <button
+                            onClick={handleDeleteAccount}
+                            disabled={
+                              deleteStatus === "verifying" || !confirmChecked
+                            }
+                            className="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-xl transition flex items-center justify-center gap-2 text-sm"
+                          >
+                            {deleteStatus === "verifying" ? (
+                              "Deleting account..."
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4" />
+                                Permanently Delete Account
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+                    </section>
+
+                    {/* Helpful Links */}
+                    <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                      <div className="px-6 py-5 border-b border-gray-100">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Need help first?
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                          Consider these options before deleting
+                        </p>
+                      </div>
+
+                      <div className="divide-y divide-gray-100">
+                        <Link
+                          href="/contactus"
+                          className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-50 rounded-lg">
+                              <Mail className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">
+                                Contact Support
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Talk to us before you leave
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition" />
+                        </Link>
+
+                        <Link
+                          href="/auth/terms-and-conditions"
+                          className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-amber-50 rounded-lg">
+                              <FileText className="w-5 h-5 text-amber-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">
+                                Terms & Conditions
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Review our terms before deleting
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition" />
+                        </Link>
+                      </div>
+                    </section>
+                  </>
+                )}
+              </div>
+            )}
+          </main>
         </div>
       </div>
-    </>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────
+// Reusable Toggle Row Component
+// ──────────────────────────────────────────────
+function ToggleRow({
+  title,
+  description,
+  checked,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between px-6 py-4">
+      <div className="pr-4">
+        <p className="font-medium text-gray-900 text-sm">{title}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+      </div>
+
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+          checked ? "bg-blue-600" : "bg-gray-200"
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
   );
 }
