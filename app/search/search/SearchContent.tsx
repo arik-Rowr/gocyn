@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { FiSearch, FiSliders, FiX, FiStar, FiClock, FiTrendingUp, FiBook, FiBriefcase, FiChevronDown, FiFilter } from "react-icons/fi";
+import {
+  FiSliders,
+  FiX,
+  FiStar,
+  FiClock,
+} from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,24 +27,24 @@ interface SearchResult {
   id: string;
   type: "internship" | "course";
   title: string;
-  company?: string; // for internships
-  instructor?: string; // for courses
+  company?: string;
+  instructor?: string;
   thumbnail: string;
   rating: number;
   reviews: number;
-  duration?: string; // e.g., "6 months", "12 weeks"
+  duration?: string;
   level: "Beginner" | "Intermediate" | "Advanced" | "All Levels";
   category: string;
   skills: string[];
-  stipend?: string; // for internships
-  price?: number; // for courses (0 = free)
+  stipend?: string;
+  price?: number;
   originalPrice?: number;
   description: string;
-  createdAt: string; // ISO date
+  createdAt: string;
 }
 
 // ──────────────────────────────────────────────
-// Mock Data – replace with API / Elasticsearch later
+// Mock Data
 // ──────────────────────────────────────────────
 const mockResults: SearchResult[] = [
   {
@@ -176,34 +181,53 @@ const getSortFunction = (sort: SortOption) => {
       return (a: SearchResult, b: SearchResult) => b.rating - a.rating;
     case "popular":
       return (a: SearchResult, b: SearchResult) => b.reviews - a.reviews;
-    default: // relevance – for mock we'll just do a simple title match or keep order
+    default:
       return undefined;
   }
 };
 
+function extractWeeks(duration: string): number {
+  const match = duration.match(/(\d+)/);
+  if (!match) return 0;
+  let weeks = parseInt(match[0]);
+  if (duration.toLowerCase().includes("month")) weeks *= 4;
+  return weeks;
+}
+
 // ──────────────────────────────────────────────
-// Component
+// Main Component
 // ──────────────────────────────────────────────
 export default function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // State from URL / internal
-  const [query, setQuery] = useState(searchParams.get("q") || "");
+  const query = searchParams.get("q") || "";
+
+  // Filter states
   const [typeFilter, setTypeFilter] = useState<ContentType>("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [showFilters, setShowFilters] = useState(false);
-  const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
-  const [priceFilter, setPriceFilter] = useState<string[]>([]); // e.g., "free", "paid"
+  const [priceFilter, setPriceFilter] = useState<string[]>([]);
   const [durationFilter, setDurationFilter] = useState<string[]>([]);
 
-  // Derived data – filtered and sorted results
+  // ── Listen for Navbar filter button ──
+  useEffect(() => {
+    const handleToggleFilters = () => {
+      setShowFilters((prev) => !prev);
+    };
+
+    window.addEventListener("toggleFilters", handleToggleFilters);
+    return () => {
+      window.removeEventListener("toggleFilters", handleToggleFilters);
+    };
+  }, []);
+
+  // ── Filtered & sorted results ──
   const results = useMemo(() => {
     let filtered = [...mockResults];
 
-    // Search query
     if (query.trim()) {
       const q = query.toLowerCase();
       filtered = filtered.filter(
@@ -214,32 +238,27 @@ export default function SearchContent() {
       );
     }
 
-    // Content type
     if (typeFilter !== "all") {
       filtered = filtered.filter((item) => item.type === typeFilter);
     }
 
-    // Category
     if (selectedCategory !== "all") {
       filtered = filtered.filter((item) => item.category === selectedCategory);
     }
 
-    // Level filter
     if (levelFilter.length > 0) {
       filtered = filtered.filter((item) => levelFilter.includes(item.level));
     }
 
-    // Price filter (only applies to courses)
     if (priceFilter.length > 0) {
       filtered = filtered.filter((item) => {
-        if (item.type !== "course") return true; // keep internships unchanged
+        if (item.type !== "course") return true;
         if (priceFilter.includes("free") && item.price === 0) return true;
         if (priceFilter.includes("paid") && item.price && item.price > 0) return true;
         return false;
       });
     }
 
-    // Duration filter (simplified; real implementation would parse)
     if (durationFilter.length > 0) {
       filtered = filtered.filter((item) => {
         if (!item.duration) return true;
@@ -251,24 +270,13 @@ export default function SearchContent() {
       });
     }
 
-    // Sort
     const sortFn = getSortFunction(sortBy);
-    if (sortFn) {
-      filtered.sort(sortFn);
-    }
+    if (sortFn) filtered.sort(sortFn);
 
     return filtered;
   }, [query, typeFilter, selectedCategory, sortBy, levelFilter, priceFilter, durationFilter]);
 
-  // Event handlers
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Update URL with query
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    router.push(`/search?${params.toString()}`);
-  };
-
+  // ── Handlers ──
   const clearFilters = () => {
     setTypeFilter("all");
     setSelectedCategory("all");
@@ -296,178 +304,158 @@ export default function SearchContent() {
     );
   };
 
-  // Sync URL query param on mount
-  useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) setQuery(q);
-  }, [searchParams]);
+  const handleTrendingClick = (term: string) => {
+    router.push(`/search?q=${encodeURIComponent(term)}`);
+  };
 
-  return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Search Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          {/* Logo back to home */}
-          <Link href="/" className="hidden sm:block">
-            <Image src="/logo.png" alt="Logo" width={80} height={60} className="h-8 w-auto" />
-          </Link>
+  const activeFilterCount =
+    (typeFilter !== "all" ? 1 : 0) +
+    (selectedCategory !== "all" ? 1 : 0) +
+    levelFilter.length +
+    priceFilter.length +
+    durationFilter.length;
 
-          {/* Search Form */}
-          <form onSubmit={handleSearch} className="flex-1 relative max-w-3xl">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for courses, internships, skills..."
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <FiX size={18} />
-              </button>
-            )}
-          </form>
-
-          {/* Mobile filter button */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="lg:hidden p-2 rounded-full hover:bg-gray-100 text-gray-600 relative"
-          >
-            <FiSliders size={22} />
-            {(levelFilter.length > 0 || priceFilter.length > 0 || durationFilter.length > 0) && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center">
-                {levelFilter.length + priceFilter.length + durationFilter.length}
+  // ── Shared Filter Panel (used in sidebar + mobile drawer) ──
+  const FilterPanel = ({ isMobile = false }: { isMobile?: boolean }) => (
+    <div className={`space-y-6 ${isMobile ? "pb-8" : ""}`}>
+      {/* Content Type */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Content Type</h3>
+        <div className="space-y-2">
+          {(["all", "course", "internship"] as const).map((type) => (
+            <label key={type} className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="radio"
+                name={isMobile ? "mobileType" : "typeFilter"}
+                checked={typeFilter === type}
+                onChange={() => setTypeFilter(type)}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 capitalize">
+                {type === "all" ? "All" : type + "s"}
               </span>
-            )}
-          </button>
-        </div>
-
-        {/* Mobile category scroll */}
-        <div className="lg:hidden px-4 pb-2 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  selectedCategory === cat.id
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
-                }`}
-              >
-                {cat.icon} {cat.name}
-              </button>
-            ))}
-          </div>
+            </label>
+          ))}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Level */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Level</h3>
+        <div className="space-y-2">
+          {["Beginner", "Intermediate", "Advanced"].map((level) => (
+            <label key={level} className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={levelFilter.includes(level)}
+                onChange={() => toggleLevelFilter(level)}
+                className="rounded text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">{level}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Price</h3>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={priceFilter.includes("free")}
+              onChange={() => togglePriceFilter("free")}
+              className="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Free</span>
+          </label>
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={priceFilter.includes("paid")}
+              onChange={() => togglePriceFilter("paid")}
+              className="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Paid</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Duration */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Duration</h3>
+        <div className="space-y-2">
+          {[
+            { value: "short", label: "0-12 Weeks" },
+            { value: "medium", label: "12-24 Weeks" },
+            { value: "long", label: "24+ Weeks" },
+          ].map((d) => (
+            <label key={d.value} className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={durationFilter.includes(d.value)}
+                onChange={() => toggleDurationFilter(d.value)}
+                className="rounded text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">{d.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {activeFilterCount > 0 && (
+        <button
+          onClick={clearFilters}
+          className="text-sm text-blue-600 hover:underline font-medium"
+        >
+          Clear all filters
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <main className="min-h-screen bg-gray-50 pt-16 md:pt-20">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex gap-8">
-          {/* ─── Sidebar Filters (Desktop) ─── */}
+          {/* ─── Desktop Sidebar Filters ─── */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-24 space-y-6">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Content Type</h3>
-                <div className="space-y-2">
-                  {["all", "course", "internship"].map((type) => (
-                    <label key={type} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="typeFilter"
-                        checked={typeFilter === type}
-                        onChange={() => setTypeFilter(type as ContentType)}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 capitalize">
-                        {type === "all" ? "All" : type + "s"}
-                      </span>
-                    </label>
-                  ))}
-                </div>
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-gray-900">Filters</h2>
+                {activeFilterCount > 0 && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                    {activeFilterCount}
+                  </span>
+                )}
               </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Level</h3>
-                <div className="space-y-2">
-                  {["Beginner", "Intermediate", "Advanced"].map((level) => (
-                    <label key={level} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={levelFilter.includes(level)}
-                        onChange={() => toggleLevelFilter(level)}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">{level}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Price</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={priceFilter.includes("free")}
-                      onChange={() => togglePriceFilter("free")}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">Free</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={priceFilter.includes("paid")}
-                      onChange={() => togglePriceFilter("paid")}
-                      className="rounded text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">Paid</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Duration</h3>
-                <div className="space-y-2">
-                  {[
-                    { value: "short", label: "0-12 Weeks" },
-                    { value: "medium", label: "12-24 Weeks" },
-                    { value: "long", label: "24+ Weeks" },
-                  ].map((d) => (
-                    <label key={d.value} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={durationFilter.includes(d.value)}
-                        onChange={() => toggleDurationFilter(d.value)}
-                        className="rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">{d.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {(levelFilter.length > 0 || priceFilter.length > 0 || durationFilter.length > 0) && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Clear all filters
-                </button>
-              )}
+              <FilterPanel />
             </div>
           </aside>
 
           {/* ─── Main Content ─── */}
           <div className="flex-1 min-w-0">
-            {/* Desktop category bar and sort */}
+            {/* Mobile: Categories + Filter Button */}
+            <div className="flex items-center gap-2 mb-4 lg:hidden">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 flex-1">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      selectedCategory === cat.id
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    {cat.icon} {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop category bar + Sort */}
             <div className="hidden lg:flex items-center justify-between mb-4">
               <div className="flex gap-2 flex-wrap">
                 {categories.map((cat) => (
@@ -499,34 +487,34 @@ export default function SearchContent() {
               </div>
             </div>
 
-            {/* Trending searches when no query and no filters active */}
-            {!query && results.length === mockResults.length && (
-              <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Trending Searches</h2>
-                <div className="flex flex-wrap gap-2">
-                  {trendingSearches.map((term) => (
-                    <button
-                      key={term}
-                      onClick={() => {
-                        setQuery(term);
-                        router.push(`/search?q=${encodeURIComponent(term)}`);
-                      }}
-                      className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-blue-400 hover:text-blue-600 transition-colors"
-                    >
-                      {term}
-                    </button>
-                  ))}
+            {/* Trending searches */}
+            {!query &&
+              results.length === mockResults.length &&
+              activeFilterCount === 0 && (
+                <div className="mb-8">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                    Trending Searches
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {trendingSearches.map((term) => (
+                      <button
+                        key={term}
+                        onClick={() => handleTrendingClick(term)}
+                        className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Results count */}
+            {/* Results count + Mobile Sort */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-600">
                 {results.length} result{results.length !== 1 ? "s" : ""}
                 {query && ` for "${query}"`}
               </p>
-              {/* Mobile sort */}
               <div className="lg:hidden">
                 <select
                   value={sortBy}
@@ -559,7 +547,7 @@ export default function SearchContent() {
                 />
                 <h3 className="text-lg font-medium text-gray-900">No results found</h3>
                 <p className="text-gray-500 mt-1">
-                  Try adjusting your search or filters to find what you're looking for.
+                  Try adjusting your search or filters to find what you&apos;re looking for.
                 </p>
                 <button
                   onClick={clearFilters}
@@ -570,7 +558,7 @@ export default function SearchContent() {
               </div>
             )}
 
-            {/* Pagination placeholder (can be implemented with real data) */}
+            {/* Pagination placeholder */}
             {results.length > 6 && (
               <div className="mt-8 flex justify-center">
                 <nav className="flex gap-1">
@@ -593,120 +581,62 @@ export default function SearchContent() {
         </div>
       </div>
 
-      {/* Mobile Filter Modal */}
+      {/* ─── Mobile Filter Drawer ─── */}
       <AnimatePresence>
         {showFilters && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 lg:hidden bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] lg:hidden bg-black/50 backdrop-blur-sm"
             onClick={() => setShowFilters(false)}
           >
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl p-6 overflow-y-auto"
+              className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-white shadow-2xl flex flex-col"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold">Filters</h2>
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold">Filters</h2>
+                  {activeFilterCount > 0 && (
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="p-1 rounded-full hover:bg-gray-100"
+                  className="p-2 rounded-full hover:bg-gray-100 transition"
+                  aria-label="Close filters"
                 >
-                  <FiX size={24} />
+                  <FiX size={22} />
                 </button>
               </div>
 
-              <div className="space-y-6">
-                {/* Type */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Content Type</h3>
-                  {["all", "course", "internship"].map((type) => (
-                    <label key={type} className="flex items-center gap-2 py-1">
-                      <input
-                        type="radio"
-                        name="mobileType"
-                        checked={typeFilter === type}
-                        onChange={() => setTypeFilter(type as ContentType)}
-                      />
-                      <span className="text-sm capitalize">{type === "all" ? "All" : type + "s"}</span>
-                    </label>
-                  ))}
-                </div>
+              {/* Filter content */}
+              <div className="flex-1 overflow-y-auto px-5 py-5">
+                <FilterPanel isMobile />
+              </div>
 
-                {/* Level */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Level</h3>
-                  {["Beginner", "Intermediate", "Advanced"].map((level) => (
-                    <label key={level} className="flex items-center gap-2 py-1">
-                      <input
-                        type="checkbox"
-                        checked={levelFilter.includes(level)}
-                        onChange={() => toggleLevelFilter(level)}
-                      />
-                      <span className="text-sm">{level}</span>
-                    </label>
-                  ))}
-                </div>
-
-                {/* Price */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Price</h3>
-                  <label className="flex items-center gap-2 py-1">
-                    <input
-                      type="checkbox"
-                      checked={priceFilter.includes("free")}
-                      onChange={() => togglePriceFilter("free")}
-                    />
-                    <span className="text-sm">Free</span>
-                  </label>
-                  <label className="flex items-center gap-2 py-1">
-                    <input
-                      type="checkbox"
-                      checked={priceFilter.includes("paid")}
-                      onChange={() => togglePriceFilter("paid")}
-                    />
-                    <span className="text-sm">Paid</span>
-                  </label>
-                </div>
-
-                {/* Duration */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Duration</h3>
-                  {[
-                    { value: "short", label: "0-12 Weeks" },
-                    { value: "medium", label: "12-24 Weeks" },
-                    { value: "long", label: "24+ Weeks" },
-                  ].map((d) => (
-                    <label key={d.value} className="flex items-center gap-2 py-1">
-                      <input
-                        type="checkbox"
-                        checked={durationFilter.includes(d.value)}
-                        onChange={() => toggleDurationFilter(d.value)}
-                      />
-                      <span className="text-sm">{d.label}</span>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  <button
-                    onClick={clearFilters}
-                    className="flex-1 py-2 border border-gray-300 rounded-full text-sm"
-                  >
-                    Clear All
-                  </button>
-                  <button
-                    onClick={() => setShowFilters(false)}
-                    className="flex-1 py-2 bg-blue-600 text-white rounded-full text-sm"
-                  >
-                    Apply
-                  </button>
-                </div>
+              {/* Footer actions */}
+              <div className="border-t px-5 py-4 flex gap-3 bg-white">
+                <button
+                  onClick={clearFilters}
+                  className="flex-1 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition"
+                >
+                  Show {results.length} results
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -717,18 +647,7 @@ export default function SearchContent() {
 }
 
 // ──────────────────────────────────────────────
-// Helper: extract weeks from duration string
-// ──────────────────────────────────────────────
-function extractWeeks(duration: string): number {
-  const match = duration.match(/(\d+)/);
-  if (!match) return 0;
-  let weeks = parseInt(match[0]);
-  if (duration.toLowerCase().includes("month")) weeks *= 4;
-  return weeks;
-}
-
-// ──────────────────────────────────────────────
-// Result Card Component
+// Result Card
 // ──────────────────────────────────────────────
 function ResultCard({ item }: { item: SearchResult }) {
   return (
@@ -745,9 +664,13 @@ function ResultCard({ item }: { item: SearchResult }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         <div className="absolute top-2 left-2">
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-            item.type === "course" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
-          }`}>
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-medium ${
+              item.type === "course"
+                ? "bg-purple-100 text-purple-700"
+                : "bg-emerald-100 text-emerald-700"
+            }`}
+          >
             {item.type === "course" ? "Course" : "Internship"}
           </span>
         </div>
@@ -773,14 +696,15 @@ function ResultCard({ item }: { item: SearchResult }) {
               <FiClock size={12} /> {item.duration}
             </span>
           )}
-          <span className="flex items-center gap-1">
-            • {item.level}
-          </span>
+          <span>• {item.level}</span>
         </div>
         {item.skills.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {item.skills.slice(0, 3).map((skill) => (
-              <span key={skill} className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
+              <span
+                key={skill}
+                className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600"
+              >
                 {skill}
               </span>
             ))}
@@ -795,7 +719,9 @@ function ResultCard({ item }: { item: SearchResult }) {
                 <div>
                   <span className="font-bold text-gray-900">₹{item.price}</span>
                   {item.originalPrice && (
-                    <span className="text-xs text-gray-400 line-through ml-1">₹{item.originalPrice}</span>
+                    <span className="text-xs text-gray-400 line-through ml-1">
+                      ₹{item.originalPrice}
+                    </span>
                   )}
                 </div>
               )}
