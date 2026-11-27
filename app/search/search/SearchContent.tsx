@@ -95,8 +95,10 @@ function mapSearchResults(data: any): SearchItem[] {
 
 export default function SearchContent({
   scope = "all",
+  initialCatalog,
 }: {
   scope?: ContentType;
+  initialCatalog?: { courses?: any[]; mentors?: any[] };
 }) {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -109,7 +111,9 @@ export default function SearchContent({
   const [sort, setSort] = useState<
     "relevance" | "name" | "price-low" | "price-high"
   >("relevance");
-  const [items, setItems] = useState<SearchItem[]>([]);
+  const [items, setItems] = useState<SearchItem[]>(() =>
+    initialCatalog ? mapSearchResults(initialCatalog) : [],
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchMode, setSearchMode] = useState("");
@@ -123,6 +127,13 @@ export default function SearchContent({
     if (cleanQuery.length < 2) {
       if (cleanQuery.length > 0) {
         setItems([]);
+        setError("");
+        setLoading(false);
+        setSearchMode("");
+        return;
+      }
+      if (initialCatalog) {
+        setItems(mapSearchResults(initialCatalog));
         setError("");
         setLoading(false);
         setSearchMode("");
@@ -314,7 +325,7 @@ export default function SearchContent({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [query, type, mode, scope]);
+  }, [query, type, mode, scope, initialCatalog]);
 
   const categories = useMemo(
     () =>

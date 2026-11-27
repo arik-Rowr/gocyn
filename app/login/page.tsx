@@ -178,9 +178,6 @@ export default function Login() {
       >
         {/* Header */}
         <header className="mb-12">
-          <p className="mb-5 text-sm font-semibold tracking-[0.2em] text-blue-600 dark:text-blue-400">
-            GOCYN
-          </p>
 
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
             Welcome back.

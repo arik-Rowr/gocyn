@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   { path: "/admin/course-reviews", label: "Course Review", icon: MdSchool },
   { path: "/admin/earnings", label: "Earnings", icon: MdBarChart },
   { path: "/admin/campaigns", label: "Course Campaigns", icon: MdCampaign },
-  { path: "/admin/notifications", label: "Notification Analytics", icon: MdNotificationsActive },
+  { path: "/admin/notifications", label: "Notifications", icon: MdNotificationsActive },
   { path: "/admin/internships", label: "Internships", icon: MdWork },
   { path: "/admin/mentors", label: "Mentors", icon: MdAdminPanelSettings },
   { path: "/admin/accessControl", label: "Controls", icon: MdControlCamera },

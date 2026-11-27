@@ -167,7 +167,7 @@ const advanceOrClose = useCallback((adId: string) => {
   // ── Fetch ads ───────────────────────────────────────────────────────────────
   const fetchAds = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/api/admin/ads/active/`);
+      const res = await fetch(`${API}/api/admin/ads/active/?placement=modal`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: Ad[] = await res.json();
       setAds(data);
